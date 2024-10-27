@@ -19,7 +19,7 @@ PROGRAM_STARTED: datetime = datetime.now()
 class LogCreator:
     bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Клиент пробужден! Ожидание ответа от пользователя..."
     response_got: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя получен! Сохранение..."
-    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен! Выключение..."
+    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен!"
     bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[!] Клиент отправлен в режим сна."
                                              "\nВремя исполнения программы: {}"
                                              "\nСледующее пробуждение: {}")
