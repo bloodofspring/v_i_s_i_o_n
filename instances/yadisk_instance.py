@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-YADISK: Final[yadisk.YaDisk] = yadisk.YaDisk(token=environ["yadisk_token"])
+yandex_disk_client: Final[yadisk.YaDisk] = yadisk.YaDisk(token=environ["yadisk_token"])
 
+# get token ->
+# https://oauth.yandex.ru/authorize?response_type=token&client_id=<app_id>
 # print(YADISK.check_token())
