@@ -1,3 +1,4 @@
+import asyncio
 import shutil
 from datetime import datetime, timedelta
 from random import randint
@@ -17,12 +18,12 @@ PROGRAM_STARTED: datetime = datetime.now()
 
 
 class LogCreator:
-    bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Клиент пробужден! Ожидание ответа от пользователя..."
-    response_got: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя получен! Сохранение..."
-    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен!"
-    bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[!] Клиент отправлен в режим сна."
-                                              "\nВремя исполнения программы: {}"
-                                              "\nСледующее пробуждение: {}")
+    bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Сообщение пользователю отправлено!"
+    response_got: str = Fore.LIGHTYELLOW_EX + "[#] получено фото от пользователя! Сохранение..."
+    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен!."
+    bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[#] Назначено новое время отправки сообщения!"
+                                              "\nВремя ожидания ответа: {}"
+                                              "\nСледующее сообщение: {}")
 
     def info(self, log_name_or_text: str, *args):
         if not hasattr(self, log_name_or_text):
@@ -51,6 +52,10 @@ class BaseHandler:
 
 
 class GetUserResponse(BaseHandler):
+    def __init__(self):
+        super().__init__()
+        self.is_waiting = False
+
     FILTER = filters.photo
 
     async def func(self, _, request: Message):
@@ -69,25 +74,28 @@ class GetUserResponse(BaseHandler):
         Photos.create(file_name=file_name)
 
         await request.reply_text(text="Сохранение произведено успешно!")
-        LogCreator().info(LogCreator.file_saved)
 
         try:
             shutil.rmtree("downloads")
         except Exception as e:
             print(f"cannot delete folder 'downloads'\nError type: {type(e)}\nError text: {str(e)}")
 
-        self.stop_client()
+        if not self.is_waiting:
+            await self.stop_client()
 
     @staticmethod
-    def set_new_awake_time() -> datetime:
+    def set_new_awake_time() -> int:
         now = datetime.now()
         until_4_44 = 1724 - (now.minute + now.hour * 60)
-        send_time = now + timedelta(minutes=randint(until_4_44, until_4_44 + 1440))
 
-        return send_time
+        return randint(until_4_44, until_4_44 + 1440) * 60
 
-    def stop_client(self):
-        exit(LogCreator.bot_stopped.format(datetime.now() - PROGRAM_STARTED, self.set_new_awake_time()))
+    async def stop_client(self):
+        self.is_waiting = True
+        awake_t = self.set_new_awake_time()
+        LogCreator().info("bot_stopped", datetime.now() - PROGRAM_STARTED, datetime.now() + timedelta(seconds=awake_t))
+        await asyncio.sleep(awake_t)
+        send_notification_to_mazutta()
 
 
 def send_notification_to_mazutta() -> None:
