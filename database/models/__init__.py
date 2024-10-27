@@ -1,5 +1,5 @@
-from database.models.Photos import Photos
+from database.models.saved_filenames import SavedFileNames
 
 active_models = [
-    Photos,
+    SavedFileNames,
 ]
