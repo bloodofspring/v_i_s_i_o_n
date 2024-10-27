@@ -1,4 +1,4 @@
-import os
+import shutil
 from datetime import datetime, timedelta
 from random import randint
 
@@ -8,10 +8,10 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.handlers.handler import Handler
 from pyrogram.types import Message, CallbackQuery
 
-from bot_instance import pyrogram_client, telebot_client
-from config import OWNER_ID
+from config import OWNER_ID, YANDEX_DISK_FOLDER_NAME
 from database.create import create_tables
 from database.models import Photos
+from instances import yandex_disk_client, pyrogram_client, telebot_client
 
 PROGRAM_STARTED: datetime = datetime.now()
 
@@ -19,10 +19,10 @@ PROGRAM_STARTED: datetime = datetime.now()
 class LogCreator:
     bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Клиент пробужден! Ожидание ответа от пользователя..."
     response_got: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя получен! Сохранение..."
-    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен! Выключение..."
+    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен!"
     bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[!] Клиент отправлен в режим сна."
-                                             "\nВремя исполнения программы: {}"
-                                             "\nСледующее пробуждение: {}")
+                                              "\nВремя исполнения программы: {}"
+                                              "\nСледующее пробуждение: {}")
 
     def info(self, log_name_or_text: str, *args):
         if not hasattr(self, log_name_or_text):
@@ -59,18 +59,22 @@ class GetUserResponse(BaseHandler):
 
         LogCreator().info(LogCreator.response_got)
 
-        if not os.path.exists(f"@{username}_photos"):
-            os.mkdir(f"@{username}_photos")
+        path = YANDEX_DISK_FOLDER_NAME
+        if not yandex_disk_client.exists(path):
+            yandex_disk_client.mkdir(path)
 
-        file_name = (f"@{username}/Photo("
-                     f"date={now.day}_{now.month}_{now.year}, "
-                     f"time={now.hour}_{now.minute}_{now.second}"
-                     f")")
+        file_name = f"@{username}(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}).jpeg"
         await request.download(file_name=file_name)
+        yandex_disk_client.upload(f"downloads/{file_name}", f"{path}/{file_name}")
         Photos.create(file_name=file_name)
-        await request.reply_text(text="Сохранение произведено успешно!")
 
+        await request.reply_text(text="Сохранение произведено успешно!")
         LogCreator().info(LogCreator.file_saved)
+
+        try:
+            shutil.rmtree("downloads")
+        except Exception as e:
+            print(f"cannot delete folder 'downloads'\nError type: {type(e)}\nError text: {str(e)}")
 
         self.stop_client()
 
