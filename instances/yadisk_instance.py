@@ -1,8 +1,8 @@
 """Инициализация яндекс диск API"""
 from os import environ
 from typing import Final
-import yadisk
 
+import yadisk
 from dotenv import load_dotenv
 
 load_dotenv()
