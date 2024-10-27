@@ -55,10 +55,13 @@ class GetUserResponse:
 
     @property
     def new_awake_time(self) -> int:
-        now = datetime.now()
-        until_4_44 = 1724 - (now.minute + now.hour * 60)
+        start_time = 4 * 60 + 44  # 4:44
+        add_time = 18 * 60  # +18 hrs
 
-        return randint(until_4_44, until_4_44 + 1440) * 60
+        now = datetime.now()
+        until_ = (1440 + start_time) - (now.minute + now.hour * 60)
+
+        return randint(until_, until_ + add_time) * 60
 
     async def reschedule_notification_sending_time(self):
         self.is_waiting = True
