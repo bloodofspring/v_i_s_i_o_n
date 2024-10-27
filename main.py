@@ -17,22 +17,6 @@ from instances import yandex_disk_client, pyrogram_client, telebot_client
 PROGRAM_STARTED: datetime = datetime.now()
 
 
-class LogCreator:
-    bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Сообщение пользователю отправлено!"
-    response_got: str = Fore.LIGHTYELLOW_EX + "[#] получено фото от пользователя! Сохранение..."
-    file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен!."
-    bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[#] Назначено новое время отправки сообщения!"
-                                              "\nВремя ожидания ответа: {}"
-                                              "\nСледующее сообщение: {}")
-
-    def info(self, log_name_or_text: str, *args):
-        if not hasattr(self, log_name_or_text):
-            print(log_name_or_text.format(*args))
-            return
-
-        print(getattr(self, log_name_or_text).format(*args))
-
-
 class BaseHandler:
     """Базовый обработчик-исполнитель"""
     __name__ = ""
@@ -59,10 +43,10 @@ class GetUserResponse(BaseHandler):
     FILTER = filters.photo
 
     async def func(self, _, request: Message):
+        print(Fore.LIGHTYELLOW_EX + "[#] получено фото от пользователя! Сохранение...")
+
         now = datetime.now()
         username = request.from_user.username
-
-        LogCreator().info(LogCreator.response_got)
 
         path = YANDEX_DISK_FOLDER_NAME
         if not yandex_disk_client.exists(path):
@@ -74,6 +58,7 @@ class GetUserResponse(BaseHandler):
         Photos.create(file_name=file_name)
 
         await request.reply_text(text="Сохранение произведено успешно!")
+        print(Fore.LIGHTGREEN_EX + "[#] Ответ от пользователя сохранен!")
 
         try:
             shutil.rmtree("downloads")
@@ -93,13 +78,21 @@ class GetUserResponse(BaseHandler):
     async def stop_client(self):
         self.is_waiting = True
         awake_t = self.set_new_awake_time()
-        LogCreator().info("bot_stopped", datetime.now() - PROGRAM_STARTED, datetime.now() + timedelta(seconds=awake_t))
+        print(
+            Fore.LIGHTYELLOW_EX +
+            "[#] Назначено новое время отправки сообщения!"
+            "\nВремя ожидания ответа: {}"
+            "\nСледующее сообщение: {}".format(
+                datetime.now() - PROGRAM_STARTED, datetime.now() + timedelta(seconds=awake_t)
+            )
+        )
         await asyncio.sleep(awake_t)
         send_notification_to_mazutta()
 
 
 def send_notification_to_mazutta() -> None:
     telebot_client.send_message(chat_id=OWNER_ID, text="Take a photo!")
+    print(Fore.LIGHTYELLOW_EX + "[!] Сообщение пользователю отправлено!")
 
 
 def add_handlers() -> None:
@@ -115,7 +108,6 @@ def run_bot() -> None:
     create_tables()
 
     try:
-        LogCreator().info(LogCreator.bot_started)
         pyrogram_client.run()
     except Exception as e:
         print(f"Невозможно запустить клиента! {e}")
