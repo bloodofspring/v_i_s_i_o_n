@@ -18,11 +18,11 @@ PROGRAM_STARTED: datetime = datetime.now()
 
 class LogCreator:
     bot_started: str = Fore.LIGHTYELLOW_EX + "[!] Клиент пробужден! Ожидание ответа от пользователя..."
-    response_got: str= Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя получен! Сохранение..."
+    response_got: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя получен! Сохранение..."
     file_saved: str = Fore.LIGHTYELLOW_EX + "[#] Ответ от пользователя сохранен! Выключение..."
-    bot_stopped: str = Fore.LIGHTWHITE_EX + ("[!] Клиент отправлен в режим сна."
-                                        "\nВремя исполнения программы: {}"
-                                        "\nСледующее пробуждение: {}")
+    bot_stopped: str = Fore.LIGHTYELLOW_EX + ("[!] Клиент отправлен в режим сна."
+                                             "\nВремя исполнения программы: {}"
+                                             "\nСледующее пробуждение: {}")
 
     def info(self, log_name_or_text: str, *args):
         if not hasattr(self, log_name_or_text):
