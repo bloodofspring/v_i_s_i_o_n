@@ -4,95 +4,84 @@ from datetime import datetime, timedelta
 from random import randint
 
 from colorama import Fore, init
-from pyrogram import filters, Client
+from pyrogram import filters
 from pyrogram.handlers import MessageHandler
-from pyrogram.handlers.handler import Handler
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import Message
 
 from config import OWNER_ID, YANDEX_DISK_FOLDER_NAME
 from database.create import create_tables
-from database.models import Photos
+from database.models import SavedFileNames
 from instances import yandex_disk_client, pyrogram_client, telebot_client
 
 PROGRAM_STARTED: datetime = datetime.now()
 
 
-class BaseHandler:
-    """Базовый обработчик-исполнитель"""
-    __name__ = ""
-    HANDLER: Handler = MessageHandler
-    FILTER: filters.Filter | None = None
-
-    def __init__(self):
-        self.client: Client | None = None
-        self.request: Message | CallbackQuery | None = None
-
-    async def func(self, client_: Client, request: Message | CallbackQuery):
-        raise NotImplementedError
-
-    @property
-    def de_pyrogram_handler(self):
-        return self.HANDLER(self.func, self.FILTER)
-
-
-class GetUserResponse(BaseHandler):
+class GetUserResponse:
     def __init__(self):
         super().__init__()
         self.is_waiting = False
 
-    FILTER = filters.photo
-
-    async def func(self, _, request: Message):
-        print(Fore.LIGHTYELLOW_EX + "[#] получено фото от пользователя! Сохранение...")
-
+    @property
+    def file_naming_data(self):
         now = datetime.now()
-        username = request.from_user.username
-
         path = YANDEX_DISK_FOLDER_NAME
+
         if not yandex_disk_client.exists(path):
             yandex_disk_client.mkdir(path)
 
-        file_name = f"@{username}(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}).jpeg"
+        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}).jpeg"
+        return file_name, path
+
+    async def save_f_and_upload_to_ya_cloud(self, request: Message):
+        file_name, path = self.file_naming_data
         await request.download(file_name=file_name)
         yandex_disk_client.upload(f"downloads/{file_name}", f"{path}/{file_name}")
-        Photos.create(file_name=file_name)
-
-        await request.reply_text(text="Сохранение произведено успешно!")
-        print(Fore.LIGHTGREEN_EX + "[#] Ответ от пользователя сохранен!")
+        SavedFileNames.create(file_name=file_name)  # create log about saved file
 
         try:
             shutil.rmtree("downloads")
         except Exception as e:
             print(f"cannot delete folder 'downloads'\nError type: {type(e)}\nError text: {str(e)}")
 
-        if not self.is_waiting:
-            await self.stop_client()
+    async def save_user_photo(self, _, request: Message):
+        print(Fore.LIGHTGREEN_EX + "[#] получено фото от пользователя! Сохранение...")
 
-    @staticmethod
-    def set_new_awake_time() -> int:
+        await self.save_f_and_upload_to_ya_cloud(request=request)
+        await request.reply_text(text="Сохранение произведено успешно!")
+        print(Fore.LIGHTGREEN_EX + "[#] Ответ от пользователя сохранен!")
+
+        if not self.is_waiting:
+            await self.reschedule_notification_sending_time()
+
+    @property
+    def new_awake_time(self) -> int:
         now = datetime.now()
         until_4_44 = 1724 - (now.minute + now.hour * 60)
 
         return randint(until_4_44, until_4_44 + 1440) * 60
 
-    async def stop_client(self):
+    async def reschedule_notification_sending_time(self):
         self.is_waiting = True
-        awake_t = self.set_new_awake_time()
+        awake_t = self.new_awake_time
         print(
-            Fore.LIGHTYELLOW_EX +
-            "[#] Назначено новое время отправки сообщения!"
-            "\nВремя ожидания ответа: {}"
-            "\nСледующее сообщение: {}".format(
+            Fore.LIGHTWHITE_EX + "[!]" +
+            Fore.LIGHTGREEN_EX + "Назначено новое время отправки сообщения!"
+                                 "\nВремя ожидания ответа: {}"
+                                 "\nСледующее сообщение: {}".format(
                 datetime.now() - PROGRAM_STARTED, datetime.now() + timedelta(seconds=awake_t)
             )
         )
         await asyncio.sleep(awake_t)
         send_notification_to_mazutta()
 
+    @property
+    def de_pyrogram_handler(self):
+        return MessageHandler(self.save_user_photo, filters=filters.photo)
+
 
 def send_notification_to_mazutta() -> None:
     telebot_client.send_message(chat_id=OWNER_ID, text="Take a photo!")
-    print(Fore.LIGHTYELLOW_EX + "[!] Сообщение пользователю отправлено!")
+    print(Fore.LIGHTWHITE_EX + "[!]" + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
 
 
 def add_handlers() -> None:
