@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from random import randint
 
@@ -59,13 +58,10 @@ class GetUserResponse(BaseHandler):
 
         LogCreator().info(LogCreator.response_got)
 
-        if not os.path.exists(f"@{username}_photos"):
-            os.mkdir(f"@{username}_photos")
-
-        file_name = (f"@{username}/Photo("
+        file_name = (f"@{username}_photos/Photo("
                      f"date={now.day}_{now.month}_{now.year}, "
                      f"time={now.hour}_{now.minute}_{now.second}"
-                     f")")
+                     f").png")
         await request.download(file_name=file_name)
         Photos.create(file_name=file_name)
         await request.reply_text(text="Сохранение произведено успешно!")
