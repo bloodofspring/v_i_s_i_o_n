@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from random import randint
 
 from colorama import Fore, init
-from pyrogram import filters
+from pyrogram import filters, Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
@@ -43,7 +43,7 @@ class GetUserResponse:
         except Exception as e:
             print(f"cannot delete folder 'downloads'\nError type: {type(e)}\nError text: {str(e)}")
 
-    async def save_user_photo(self, _, request: Message):
+    async def save_user_photo(self, _: Client, request: Message):
         print(Fore.LIGHTGREEN_EX + "[#] получено фото от пользователя! Сохранение...")
 
         await self.save_f_and_upload_to_ya_cloud(request=request)
@@ -67,7 +67,7 @@ class GetUserResponse:
         self.is_waiting = True
         awake_t = self.new_awake_time
         print(
-            Fore.LIGHTWHITE_EX + "[!]" +
+            Fore.LIGHTWHITE_EX + "[!] " +
             Fore.LIGHTGREEN_EX + "Назначено новое время отправки сообщения!"
                                  "\nВремя ожидания ответа: {}"
                                  "\nСледующее сообщение: {}".format(
@@ -84,7 +84,7 @@ class GetUserResponse:
 
 def send_notification_to_mazutta() -> None:
     telebot_client.send_message(chat_id=OWNER_ID, text="Take a photo!")
-    print(Fore.LIGHTWHITE_EX + "[!]" + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
+    print(Fore.LIGHTWHITE_EX + "[!] " + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
 
 
 def add_handlers() -> None:
