@@ -16,6 +16,13 @@ from instances import yandex_disk_client, pyrogram_client, telebot_client
 PROGRAM_STARTED: datetime = datetime.now()
 
 
+def is_owner(_, __, request: Message):
+    return request and request.from_user and request.from_user.id == OWNER_ID
+
+
+is_owner_filter = filters.create(is_owner)
+
+
 class GetUserResponse:
     def __init__(self):
         super().__init__()
@@ -79,7 +86,7 @@ class GetUserResponse:
 
     @property
     def de_pyrogram_handler(self):
-        return MessageHandler(self.save_user_photo, filters=filters.photo)
+        return MessageHandler(self.save_user_photo, filters=filters.photo & is_owner_filter)
 
 
 def send_notification_to_mazutta() -> None:
