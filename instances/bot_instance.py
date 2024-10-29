@@ -14,4 +14,4 @@ pyrogram_client: Final[Client] = Client(
     bot_token=environ['bot_token']
 )
 
-telebot_client: Final[TeleBot] = TeleBot(token=environ['bot_token'])
+# telebot_client: Final[TeleBot] = TeleBot(token=environ['bot_token'])

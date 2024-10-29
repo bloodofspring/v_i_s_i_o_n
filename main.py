@@ -1,39 +1,23 @@
-import asyncio
 import os.path
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 from os import stat
-from random import randint
 
 from colorama import Fore, init
 from pyrogram import filters, Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
-from config import OWNER_ID, YANDEX_DISK_FOLDER_NAME, ALLOWED_CHANS_ID
+from config import YANDEX_DISK_FOLDER_NAME
 from database.create import create_tables
 from database.models import SavedFileNames
-from instances import yandex_disk_client, pyrogram_client, telebot_client
-
-PROGRAM_STARTED: datetime = datetime.now()
-
-
-def is_owner(_, __, request: Message):
-    return request and request.from_user and request.from_user.id == OWNER_ID
-
-
-def is_allowed_channel(_, __, request: Message):
-    return request and request.sender_chat and request.sender_chat.id in ALLOWED_CHANS_ID
-
-
-is_owner_filter = filters.create(is_owner)
-is_allowed_channel_filter = filters.create(is_allowed_channel)
+from filters import is_owner_filter, is_allowed_channel_filter
+from instances import yandex_disk_client, pyrogram_client
 
 
 class GetUserResponse:
     def __init__(self):
         super().__init__()
-        self.is_waiting = False
 
     @staticmethod
     def get_file_naming_data(extension: str):
@@ -80,29 +64,6 @@ class GetUserResponse:
               f"Файл от пользователя сохранен! [size={size}B, type={extension}]"
               )
 
-        if not self.is_waiting:
-            await self.reschedule_notification_sending_time()
-
-    @property
-    def new_awake_time(self) -> int:
-        start_time = 4 * 60 + 44  # 4:44
-        add_time = 18 * 60  # +18 hrs
-
-        now = datetime.now()
-        until_ = (1440 + start_time) - (now.minute + now.hour * 60)
-
-        return randint(until_, until_ + add_time) * 60
-
-    async def reschedule_notification_sending_time(self):
-        self.is_waiting = True
-        awake_t = self.new_awake_time
-        print(
-            Fore.LIGHTWHITE_EX + f"[{datetime.now()}][!]>>-||--> " +
-            Fore.LIGHTGREEN_EX + f"Назначено новое время отправки сообщения! [next_messgae={datetime.now() - PROGRAM_STARTED}, await_answer_time={datetime.now() + timedelta(seconds=awake_t)}]"
-        )
-        await asyncio.sleep(awake_t)
-        send_notification_to_mazutta()
-
     @property
     def de_pyrogram_handler(self):
         return MessageHandler(
@@ -115,11 +76,6 @@ class GetUserResponse:
         )
 
 
-def send_notification_to_mazutta() -> None:
-    telebot_client.send_message(chat_id=OWNER_ID, text="Take a photo!")
-    print(Fore.LIGHTWHITE_EX + f"[{datetime.now()}][!]>>-||--> " + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
-
-
 def add_handlers() -> None:
     for handler in [GetUserResponse]:
         pyrogram_client.add_handler(handler().de_pyrogram_handler)
@@ -127,8 +83,6 @@ def add_handlers() -> None:
 
 def run_bot() -> None:
     init(autoreset=True)
-    send_notification_to_mazutta()
-
     add_handlers()
     create_tables()
 
