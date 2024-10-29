@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 
 from colorama import Fore
-from pyrogram import filters
+from pyrogram.enums import ChatType
 from pyrogram.types import Message
 
 from config import YANDEX_DISK_FOLDER_NAME
@@ -41,7 +41,7 @@ class FileDownloader:
             pass
 
     async def upload_to_ya_cloud(self):
-        name, full_way, save_path, f_size = self.file
+        name, full_way, save_path, f_size = await self.file
         yandex_disk_client.upload(full_way, save_path)
         SavedFileNames.create(file_name=name)  # create log about saved file
 
@@ -49,16 +49,16 @@ class FileDownloader:
 
         return name, f_size
 
-    async def save_message(self, _, request: Message):
+    async def save_message(self):
         print((
                 Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
-                Fore.LIGHTGREEN_EX + f"Получен файл от пользователя! [type={request.chat.type}] -- Сохранение..."
+                Fore.LIGHTGREEN_EX + f"Получен файл от пользователя! [type={self.pyrogram_request.chat.type}] -- Сохранение..."
         ))
 
-        _, f_size = self.upload_to_ya_cloud()
+        _, f_size = await self.upload_to_ya_cloud()
 
-        if await filters.private_filter(None, None, m=request):
-            await request.reply_text(text="Сохранение произведено успешно!")
+        if isinstance(self.pyrogram_request.chat.type, type(ChatType.PRIVATE)):
+            await self.pyrogram_request.reply_text(text="Сохранение произведено успешно!")
 
         print((
                 Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
@@ -72,16 +72,17 @@ class TxtDownloader(FileDownloader):
     @property
     async def file(self) -> tuple[str, str, str, int]:
         file_name, path = self.file_naming_data
+        file_name += self.extension
 
         if not os.path.exists("downloads"):
             os.mkdir("downloads")
 
-        with open(f"downloads/{file_name}.txt", "w") as f:
+        with open(f"downloads/{file_name}", "w") as f:
             f.write(self.pyrogram_request.text)
 
-        file_size = os.stat(f"downloads/{file_name}.txt").st_size
+        file_size = os.stat(f"downloads/{file_name}").st_size
 
-        return file_name, f"downloads/{file_name}.txt", path, file_size
+        return file_name, f"downloads/{file_name}", f"{path}/{file_name}", file_size
 
 
 class PicDownloader(FileDownloader):
@@ -90,8 +91,9 @@ class PicDownloader(FileDownloader):
     @property
     async def file(self) -> tuple[str, str, str, int]:
         file_name, path = self.file_naming_data
+        file_name += self.extension
 
         await self.pyrogram_request.download(file_name=file_name)
-        file_size = os.stat(f"downloads/{file_name}.jpeg").st_size
+        file_size = os.stat(f"downloads/{file_name}").st_size
 
-        return file_name, f"downloads/{file_name}.jpeg", path, file_size
+        return file_name, f"downloads/{file_name}", f"{path}/{file_name}", file_size
