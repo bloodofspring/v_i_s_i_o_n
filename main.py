@@ -10,7 +10,7 @@ from pyrogram import filters, Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
-from config import OWNER_ID, YANDEX_DISK_FOLDER_NAME
+from config import OWNER_ID, YANDEX_DISK_FOLDER_NAME, ALLOWED_CHANS_ID
 from database.create import create_tables
 from database.models import SavedFileNames
 from instances import yandex_disk_client, pyrogram_client, telebot_client
@@ -22,7 +22,12 @@ def is_owner(_, __, request: Message):
     return request and request.from_user and request.from_user.id == OWNER_ID
 
 
+def is_allowed_channel(_, __, request: Message):
+    return request and request.sender_chat and request.sender_chat.id in ALLOWED_CHANS_ID
+
+
 is_owner_filter = filters.create(is_owner)
+is_allowed_channel_filter = filters.create(is_allowed_channel)
 
 
 class GetUserResponse:
@@ -64,14 +69,15 @@ class GetUserResponse:
         return file_name, extension, file_size.st_size
 
     async def save_message(self, _: Client, request: Message):
-        print(Fore.LIGHTYELLOW_EX + "[#] " + Fore.LIGHTGREEN_EX + "Получен файл от пользователя! Сохранение...")
+        print(Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " + Fore.LIGHTGREEN_EX + f"Получен файл от пользователя! [type={request.chat.type}] -- Сохранение...")
 
         _, extension, size = await self.save_f_and_upload_to_ya_cloud(
             request=request, extension=".jpeg" if request.photo else ".txt"
         )
-        await request.reply_text(text="Сохранение произведено успешно!")
-        print(Fore.LIGHTYELLOW_EX + "[#] " + Fore.LIGHTGREEN_EX +
-              f"Файл от пользователя сохранен! size={size} B, type={extension}"
+        if await filters.private_filter(None, None, m=request):
+            await request.reply_text(text="Сохранение произведено успешно!")
+        print(Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " + Fore.LIGHTGREEN_EX +
+              f"Файл от пользователя сохранен! [size={size}B, type={extension}]"
               )
 
         if not self.is_waiting:
@@ -91,12 +97,8 @@ class GetUserResponse:
         self.is_waiting = True
         awake_t = self.new_awake_time
         print(
-            Fore.LIGHTWHITE_EX + "[!] " +
-            Fore.LIGHTGREEN_EX + "Назначено новое время отправки сообщения!"
-                                 "\nВремя ожидания ответа: {}"
-                                 "\nСледующее сообщение: {}".format(
-                datetime.now() - PROGRAM_STARTED, datetime.now() + timedelta(seconds=awake_t)
-            )
+            Fore.LIGHTWHITE_EX + f"[{datetime.now()}][!]>>-||--> " +
+            Fore.LIGHTGREEN_EX + f"Назначено новое время отправки сообщения! [next_messgae={datetime.now() - PROGRAM_STARTED}, await_answer_time={datetime.now() + timedelta(seconds=awake_t)}]"
         )
         await asyncio.sleep(awake_t)
         send_notification_to_mazutta()
@@ -105,13 +107,17 @@ class GetUserResponse:
     def de_pyrogram_handler(self):
         return MessageHandler(
             self.save_message,
-            filters=(filters.photo | filters.text | filters.media_group) & (filters.private | filters.channel) & is_owner_filter
+            filters=(
+                filters.photo | filters.text | filters.media_group
+            ) & (
+                filters.private & is_owner_filter | filters.channel & is_allowed_channel_filter
+            )
         )
 
 
 def send_notification_to_mazutta() -> None:
     telebot_client.send_message(chat_id=OWNER_ID, text="Take a photo!")
-    print(Fore.LIGHTWHITE_EX + "[!] " + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
+    print(Fore.LIGHTWHITE_EX + f"[{datetime.now()}][!]>>-||--> " + Fore.LIGHTGREEN_EX + "Сообщение пользователю отправлено!")
 
 
 def add_handlers() -> None:
