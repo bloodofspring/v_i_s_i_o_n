@@ -1,6 +1,8 @@
 import asyncio
+import os.path
 import shutil
 from datetime import datetime, timedelta
+from os import stat
 from random import randint
 
 from colorama import Fore, init
@@ -28,34 +30,49 @@ class GetUserResponse:
         super().__init__()
         self.is_waiting = False
 
-    @property
-    def file_naming_data(self):
+    @staticmethod
+    def get_file_naming_data(extension: str):
         now = datetime.now()
         path = YANDEX_DISK_FOLDER_NAME
 
         if not yandex_disk_client.exists(path):
             yandex_disk_client.mkdir(path)
 
-        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}).jpeg"
+        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second})" + extension
         return file_name, path
 
-    async def save_f_and_upload_to_ya_cloud(self, request: Message):
-        file_name, path = self.file_naming_data
-        await request.download(file_name=file_name)
+    async def save_f_and_upload_to_ya_cloud(self, request: Message, extension: str):
+        file_name, path = self.get_file_naming_data(extension=extension)
+
+        if request.photo is not None:
+            await request.download(file_name=file_name)
+        else:  # text case
+            if not os.path.exists("downloads"): os.mkdir("downloads")
+            with open(f"downloads/{file_name}", "w") as f:
+                f.write(request.text)
+
         yandex_disk_client.upload(f"downloads/{file_name}", f"{path}/{file_name}")
         SavedFileNames.create(file_name=file_name)  # create log about saved file
 
+        file_size = stat(f"downloads/{file_name}")
+
         try:
             shutil.rmtree("downloads")
-        except Exception as e:
-            print(f"cannot delete folder 'downloads'\nError type: {type(e)}\nError text: {str(e)}")
+        except:
+            pass
 
-    async def save_user_photo(self, _: Client, request: Message):
-        print(Fore.LIGHTGREEN_EX + "[#] получено фото от пользователя! Сохранение...")
+        return file_name, extension, file_size.st_size
 
-        await self.save_f_and_upload_to_ya_cloud(request=request)
+    async def save_message(self, _: Client, request: Message):
+        print(Fore.LIGHTYELLOW_EX + "[#] " + Fore.LIGHTGREEN_EX + "Получен файл от пользователя! Сохранение...")
+
+        _, extension, size = await self.save_f_and_upload_to_ya_cloud(
+            request=request, extension=".jpeg" if request.photo else ".txt"
+        )
         await request.reply_text(text="Сохранение произведено успешно!")
-        print(Fore.LIGHTGREEN_EX + "[#] Ответ от пользователя сохранен!")
+        print(Fore.LIGHTYELLOW_EX + "[#] " + Fore.LIGHTGREEN_EX +
+              f"Файл от пользователя сохранен! size={size} B, type={extension}"
+              )
 
         if not self.is_waiting:
             await self.reschedule_notification_sending_time()
@@ -86,7 +103,10 @@ class GetUserResponse:
 
     @property
     def de_pyrogram_handler(self):
-        return MessageHandler(self.save_user_photo, filters=filters.photo & is_owner_filter)
+        return MessageHandler(
+            self.save_message,
+            filters=(filters.photo | filters.text | filters.media_group) & (filters.private | filters.channel) & is_owner_filter
+        )
 
 
 def send_notification_to_mazutta() -> None:
