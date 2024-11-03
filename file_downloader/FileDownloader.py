@@ -28,7 +28,7 @@ class FileDownloader:
         if not yandex_disk_client.exists(path):
             yandex_disk_client.mkdir(path)
 
-        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second})"
+        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}_{now.microsecond})"
 
         return file_name, path
 
