@@ -3,7 +3,6 @@ import shutil
 from datetime import datetime
 
 from colorama import Fore
-from pyrogram.enums import ChatType
 from pyrogram.types import Message
 
 from config import YANDEX_DISK_FOLDER_NAME
@@ -56,9 +55,6 @@ class FileDownloader:
         ))
 
         _, f_size = await self.upload_to_ya_cloud()
-
-        if isinstance(self.pyrogram_request.chat.type, type(ChatType.PRIVATE)):
-            await self.pyrogram_request.reply_text(text="Сохранение произведено успешно!")
 
         print((
                 Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
