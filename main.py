@@ -19,11 +19,7 @@ async def save_message(_: Client, request: Message):
 def run_bot() -> None:
     init(autoreset=True)
     create_tables()
-
-    try:
-        pyrogram_client.run()
-    except Exception as e:
-        print(f"Невозможно запустить клиента! {e}")
+    pyrogram_client.run()
 
 
 if __name__ == "__main__":
