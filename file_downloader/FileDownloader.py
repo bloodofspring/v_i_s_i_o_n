@@ -58,6 +58,8 @@ class FileDownloader:
         if self.pyrogram_request.chat.type.PRIVATE:
             await self.pyrogram_request.delete()
 
+        await self.pyrogram_request.react(emoji="👾")
+
         print((
                 Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
                 Fore.LIGHTGREEN_EX + f"Файл от пользователя сохранен! [size={f_size}B, type={self.extension}]"
