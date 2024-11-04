@@ -55,10 +55,8 @@ class FileDownloader:
         ))
 
         _, f_size = await self.upload_to_ya_cloud()
-        if self.pyrogram_request.chat.type.PRIVATE:
-            await self.pyrogram_request.delete()
-
-        await self.pyrogram_request.react(emoji="👾")
+        # if self.pyrogram_request.chat.type.PRIVATE:
+        #     await self.pyrogram_request.delete()
 
         print((
                 Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
