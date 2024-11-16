@@ -18,17 +18,25 @@ async def save_message(_: Client, request: Message):
         await TxtDownloader(pyrogram_request=request).save_message()
 
 
-def say_meow() -> None:
+def by_alien() -> None:
+    print(end="\n\n")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@@@@@@@  @@@ @@@     @@@@@@  @@@      @@@ @@@@@@@@ @@@  @@@   @@@@@             @@@@@ ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@@!  @@@ @@! !@@    @@!  @@@ @@!      @@! @@!      @@!@!@@@ @@!@              @@!@    ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@!@!@!@   !@!@!     @!@!@!@! @!!      !!@ @!!!:!   @!@@!!@! @!@!@!@           @!@!@!@ ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"!!:  !!!   !!:      !!:  !!! !!:      !!: !!:      !!:  !!! !!:  !!!          !!:  !!!")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r":: : ::    .:        :   : : : ::.: : :   : :: ::  ::    :   : : ::  .......   : : :: ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"                                                                     : :: : :         ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"                                                                                      ")
     print((
-            Fore.LIGHTMAGENTA_EX + f"[{datetime.now()}][!]>>-||--> " +
-            Fore.LIGHTWHITE_EX + f"Клиент запущен! (>>-||--> by alien6_6 <--||-<<)"
+            Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][!]>>-||--> " +
+            Fore.LIGHTGREEN_EX + f"Клиент запущен!"
     ))
 
 
 def run_bot() -> None:
     init(autoreset=True)
     create_tables()
-    say_meow()
+    by_alien()
     pyrogram_client.run()
 
 
