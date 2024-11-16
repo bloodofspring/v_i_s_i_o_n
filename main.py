@@ -1,10 +1,9 @@
-import os.path
+from datetime import datetime
 
-from colorama import init
+from colorama import init, Fore
 from pyrogram import Client
 from pyrogram.types import Message
 
-from config import NAME
 from database.create import create_tables
 from file_downloader.FileDownloader import TxtDownloader, PicDownloader
 from filters import save_message_filter
@@ -19,18 +18,25 @@ async def save_message(_: Client, request: Message):
         await TxtDownloader(pyrogram_request=request).save_message()
 
 
-def remove_bot_journals() -> None:
-    if os.path.exists(f"{NAME}.session"):
-        os.remove(f"{NAME}.session")
-
-    if os.path.exists(f"{NAME}.session-journal"):
-        os.remove(f"{NAME}.session-journal")
+def by_alien() -> None:
+    print(end="\n\n")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@@@@@@@  @@@ @@@     @@@@@@  @@@      @@@ @@@@@@@@ @@@  @@@   @@@@@             @@@@@ ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@@!  @@@ @@! !@@    @@!  @@@ @@!      @@! @@!      @@!@!@@@ @@!@              @@!@    ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"@!@!@!@   !@!@!     @!@!@!@! @!!      !!@ @!!!:!   @!@@!!@! @!@!@!@           @!@!@!@ ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"!!:  !!!   !!:      !!:  !!! !!:      !!: !!:      !!:  !!! !!:  !!!          !!:  !!!")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r":: : ::    .:        :   : : : ::.: : :   : :: ::  ::    :   : : ::  .......   : : :: ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"                                                                     : :: : :         ")
+    print("\t" + Fore.LIGHTMAGENTA_EX + r"                                                                                      ")
+    print((
+            Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][!]>>-||--> " +
+            Fore.LIGHTGREEN_EX + f"Клиент запущен!"
+    ))
 
 
 def run_bot() -> None:
     init(autoreset=True)
     create_tables()
-    remove_bot_journals()
+    by_alien()
     pyrogram_client.run()
 
 

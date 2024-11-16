@@ -50,8 +50,8 @@ class FileDownloader:
 
     async def save_message(self):
         print((
-                Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
-                Fore.LIGHTGREEN_EX + f"Получен файл от пользователя! [type={self.pyrogram_request.chat.type}] -- Сохранение..."
+                Fore.YELLOW + f"[{datetime.now()}][#]>>-||--> " +
+                Fore.GREEN + f"Получен файл от пользователя! [type={self.pyrogram_request.chat.type}] -- Сохранение..."
         ))
 
         _, f_size = await self.upload_to_ya_cloud()
@@ -59,8 +59,8 @@ class FileDownloader:
         #     await self.pyrogram_request.delete()
 
         print((
-                Fore.LIGHTYELLOW_EX + f"[{datetime.now()}][#]>>-||--> " +
-                Fore.LIGHTGREEN_EX + f"Файл от пользователя сохранен! [size={f_size}B, type={self.extension}]"
+                Fore.YELLOW + f"[{datetime.now()}][#]>>-||--> " +
+                Fore.GREEN + f"Файл от пользователя сохранен! [size={f_size}B, type={self.extension}]"
         ))
 
 
