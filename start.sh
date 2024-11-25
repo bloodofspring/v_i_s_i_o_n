@@ -1,5 +1,5 @@
-!# /usr/bin/bash
+#! /usr/bin/bash
 git pull
-python -m venv .venv
+python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python run main.py
+.venv/bin/python main.py
