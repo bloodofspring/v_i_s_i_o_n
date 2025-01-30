@@ -29,7 +29,7 @@ class FileDownloader:
         if not yandex_disk_client.exists(path):
             yandex_disk_client.mkdir(path)
 
-        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second}_{now.microsecond})"
+        file_name = f"File(date={now.day}_{now.month}_{now.year}, time={now.hour}_{now.minute}_{now.second})"
 
         return file_name, path
 
@@ -41,18 +41,18 @@ class FileDownloader:
             pass
 
     @staticmethod
-    async def update_uploaded_file(full_way, filename_instance: SavedFileNames):
-        name_on_yadisk = YANDEX_DISK_FOLDER_NAME + "/" + filename_instance.file_name
+    async def update_uploaded_file(full_way, filename_instance: SavedFileNames) -> tuple[int, str] | None:
+        name_on_yadisk: str = YANDEX_DISK_FOLDER_NAME + "/" + filename_instance.file_name
+
         try:
-            yandex_disk_client.download(
-                name_on_yadisk,
-                f"downloads/{filename_instance.file_name}"
-            )
-        except (Exception,) as e:
-            print(e, name_on_yadisk)
+            yandex_disk_client.download(name_on_yadisk, f"downloads/{filename_instance.file_name}")
+        except (Exception,):
             return None
 
-        f_size = str(os.path.getsize(f"downloads/{filename_instance.file_name}"))
+        f_size_str = "{}+{}".format(
+            convert_file_size(os.path.getsize(f"downloads/{filename_instance.file_name}")),
+            convert_file_size(os.path.getsize(full_way))
+        )
 
         with open(f"downloads/{filename_instance.file_name}", "a") as af:
             af.write("\n")
@@ -63,29 +63,26 @@ class FileDownloader:
         yandex_disk_client.remove(name_on_yadisk)
         yandex_disk_client.upload(f"downloads/{filename_instance.file_name}", name_on_yadisk)
 
-        f_size += f"+{str(os.path.getsize(full_way))}"
+        return os.path.getsize(f"downloads/{filename_instance.file_name}"), f_size_str
 
-        return f_size
-
-    async def upload_to_ya_cloud(self):
+    async def upload_to_ya_cloud(self) -> tuple[int, str]:
         name, full_way, save_path, f_size = await self.file
-        recent_messages = SavedFileNames.select().where(SavedFileNames.created_at > (datetime.now() - timedelta(seconds=5))).order_by(SavedFileNames.created_at.desc()).execute()
+        recent_messages = SavedFileNames.select().where(
+            SavedFileNames.created_at > (datetime.now() - timedelta(seconds=5))
+        ).order_by(SavedFileNames.created_at.desc()).execute()
 
         if recent_messages:
-            f_size = await self.update_uploaded_file(
-                full_way=full_way,
-                filename_instance=recent_messages[0]
-            )
+            f_size = await self.update_uploaded_file(full_way=full_way, filename_instance=recent_messages[0])
 
             if f_size:
-                return name, f_size
+                return f_size
 
         yandex_disk_client.upload(full_way, save_path)
         SavedFileNames.create(file_name=name)
 
         self.rm_downloads_dir()
 
-        return name, f_size
+        return f_size, ""
 
     async def save_message(self):
         print((
@@ -93,14 +90,13 @@ class FileDownloader:
                 Fore.GREEN + f"Получен файл от пользователя! [type={self.pyrogram_request.chat.type}] -- Сохранение..."
         ))
 
-        _, f_size = await self.upload_to_ya_cloud()
-        # if self.pyrogram_request.chat.type.PRIVATE:
-        #     await self.pyrogram_request.delete()
+        f_size, additional = await self.upload_to_ya_cloud()
 
         print((
                 Fore.YELLOW + f"[{datetime.now()}][#]>>-||--> " +
-                Fore.GREEN + f"Файл от пользователя сохранен! [size={convert_file_size(f_size)}B, type={self.extension}]"
-        ))
+                Fore.GREEN + "Файл от пользователя сохранен! [size={}{}, type={}]".format(
+            convert_file_size(f_size), f"({additional})" if additional else "", self.extension
+        )))
 
 
 class TxtDownloader(FileDownloader):
