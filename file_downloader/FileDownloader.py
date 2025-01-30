@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from colorama import Fore
 from pyrogram.types import Message
@@ -36,13 +36,51 @@ class FileDownloader:
     def rm_downloads_dir():
         try:
             shutil.rmtree("downloads")
-        except:
+        except (Exception,):
             pass
+
+    @staticmethod
+    async def update_uploaded_file(full_way, filename_instance: SavedFileNames):
+        name_on_yadisk = YANDEX_DISK_FOLDER_NAME + "/" + filename_instance.file_name
+        try:
+            yandex_disk_client.download(
+                name_on_yadisk,
+                f"downloads/{filename_instance.file_name}"
+            )
+        except (Exception,) as e:
+            print(e, name_on_yadisk)
+            return None
+
+        f_size = str(os.path.getsize(f"downloads/{filename_instance.file_name}"))
+
+        with open(f"downloads/{filename_instance.file_name}", "a") as af:
+            af.write("\n")
+
+            with open(full_way, "r") as rf:
+                af.writelines(rf.readlines())
+
+        yandex_disk_client.remove(name_on_yadisk)
+        yandex_disk_client.upload(f"downloads/{filename_instance.file_name}", name_on_yadisk)
+
+        f_size += f"+{str(os.path.getsize(full_way))}"
+
+        return f_size
 
     async def upload_to_ya_cloud(self):
         name, full_way, save_path, f_size = await self.file
+        recent_messages = SavedFileNames.select().where(SavedFileNames.created_at > (datetime.now() - timedelta(seconds=5))).order_by(SavedFileNames.created_at.desc()).execute()
+
+        if recent_messages:
+            f_size = await self.update_uploaded_file(
+                full_way=full_way,
+                filename_instance=recent_messages[0]
+            )
+
+            if f_size:
+                return name, f_size
+
         yandex_disk_client.upload(full_way, save_path)
-        SavedFileNames.create(file_name=name)  # create log about saved file
+        SavedFileNames.create(file_name=name)
 
         self.rm_downloads_dir()
 
