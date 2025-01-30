@@ -1,7 +1,9 @@
-import re
+def convert_file_size(size: int) -> str:
+    sizes = ["Б", "КБ", "МБ", "ГБ", "ТБ"]
+    res_size_index = 0
 
+    while size // 1024:
+        size /= 1024
+        res_size_index += 1
 
-def extract_arguments(text: str) -> str or None:
-    regexp = re.compile(r"/\w*(@\w*)*\s*([\s\S]*)", re.IGNORECASE)
-    result = regexp.match(text)
-    return result.group(2) if text.startswith('/') and text is not None else None
+    return str(round(size, 2)) + sizes[res_size_index]

@@ -8,6 +8,7 @@ from pyrogram.types import Message
 from config import YANDEX_DISK_FOLDER_NAME
 from database.models import SavedFileNames
 from instances import yandex_disk_client
+from util import convert_file_size
 
 
 class FileDownloader:
@@ -98,7 +99,7 @@ class FileDownloader:
 
         print((
                 Fore.YELLOW + f"[{datetime.now()}][#]>>-||--> " +
-                Fore.GREEN + f"Файл от пользователя сохранен! [size={f_size}B, type={self.extension}]"
+                Fore.GREEN + f"Файл от пользователя сохранен! [size={convert_file_size(f_size)}B, type={self.extension}]"
         ))
 
 
